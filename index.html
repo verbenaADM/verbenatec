@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TopTec - Review & Tecnologia</title>
+    <title>VerbenaTec - Ranking & Review</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script>
@@ -13,10 +13,10 @@
         theme: {
           extend: {
             colors: {
-              primary: '#1E40AF', // Blue 70% (Main)
+              primary: '#1E40AF',
               accent: '#3B82F6',
-              surface: '#FFFFFF', // White 20%
-              neutral: '#6B7280', // Gray 10%
+              surface: '#FFFFFF',
+              neutral: '#6B7280',
             }
           }
         }
@@ -34,7 +34,60 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <body class="bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
     <div id="root"></div>
+
+    <!-- SQL SETUP INSTRUCTIONS FOR ADMIN -->
+    <!-- 
+      DROP TABLE IF EXISTS products;
+      DROP TABLE IF EXISTS news;
+      DROP TABLE IF EXISTS site_users;
+
+      CREATE TABLE products (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        description TEXT,
+        quality_score FLOAT,
+        price_high FLOAT,
+        price_low FLOAT,
+        most_talked_about BOOLEAN DEFAULT false,
+        is_top_ten BOOLEAN DEFAULT false,
+        rank INTEGER,
+        image_url TEXT,
+        affiliate_url TEXT,
+        amazon_url TEXT,
+        review TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+      );
+
+      CREATE TABLE news (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        category TEXT NOT NULL,
+        image_url TEXT,
+        date TEXT,
+        related_product_ids TEXT[] DEFAULT '{}',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+      );
+
+      CREATE TABLE site_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT,
+        is_admin BOOLEAN DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+      );
+
+      ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE news ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE site_users ENABLE ROW LEVEL SECURITY;
+
+      CREATE POLICY "Full Access Products" ON products FOR ALL USING (true) WITH CHECK (true);
+      CREATE POLICY "Full Access News" ON news FOR ALL USING (true) WITH CHECK (true);
+      CREATE POLICY "Full Access Users" ON site_users FOR ALL USING (true) WITH CHECK (true);
+    -->
   </body>
 </html>

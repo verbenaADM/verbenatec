@@ -7,12 +7,14 @@ const supabaseUrl = 'https://dybizeczoftefwxjptkm.supabase.co';
 const supabaseKey = 'sb_publishable_K6eACFcZ35n_bXocHNC-zQ_Tk1vW-9y';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Máscara de preço para o input (125000 -> 1.250,00)
 const formatCurrencyInput = (value: string) => {
   const digits = value.replace(/\D/g, "");
   const numberValue = Number(digits) / 100;
   return numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 };
 
+// Converte string formatada (1.250,00) de volta para número (1250.00)
 const parseCurrencyToNumber = (formattedValue: string) => {
   return Number(formattedValue.replace(/\./g, "").replace(",", "."));
 };
@@ -48,8 +50,10 @@ const App: React.FC = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Estados para máscaras de preço
   const [priceLowDisplay, setPriceLowDisplay] = useState("");
   const [priceHighDisplay, setPriceHighDisplay] = useState("");
+  
   const [newsCategory, setNewsCategory] = useState<Category>('celular');
   const [selectedNewsProducts, setSelectedNewsProducts] = useState<string[]>([]);
 
@@ -112,6 +116,9 @@ const App: React.FC = () => {
     if (editingItem && adminTab === 'product') {
       setPriceLowDisplay(editingItem.priceLow?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || "");
       setPriceHighDisplay(editingItem.priceHigh?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || "");
+    } else {
+      setPriceLowDisplay("");
+      setPriceHighDisplay("");
     }
   }, [editingItem, adminTab]);
 
@@ -179,7 +186,7 @@ const App: React.FC = () => {
       setShowAdminModal(false);
       setEditingItem(null);
     } else {
-      alert("Erro ao salvar: " + error.message);
+      alert("Erro ao salvar produto: " + error.message);
     }
   };
 
@@ -209,7 +216,7 @@ const App: React.FC = () => {
       setEditingItem(null);
       setSelectedNewsProducts([]);
     } else {
-      alert("Erro ao salvar: " + error.message);
+      alert("Erro ao salvar notícia: " + error.message);
     }
   };
 
@@ -221,6 +228,7 @@ const App: React.FC = () => {
       if (!error) {
         setProducts(prev => prev.filter(p => p.id !== id));
         if (selectedProductId === id) setSelectedProductId(null);
+        alert("Produto excluído globalmente.");
       } else {
         alert("Erro Supabase Delete: " + error.message);
       }
@@ -235,6 +243,7 @@ const App: React.FC = () => {
       if (!error) {
         setNews(prev => prev.filter(n => n.id !== id));
         if (selectedNewsId === id) setSelectedNewsId(null);
+        alert("Notícia excluída globalmente.");
       } else {
         alert("Erro Supabase Delete: " + error.message);
       }
@@ -273,9 +282,14 @@ const App: React.FC = () => {
       <div className="p-4 flex-grow flex flex-col">
         <h4 className="font-black text-sm uppercase line-clamp-1 mb-2 hover:text-primary cursor-pointer" onClick={() => setSelectedProductId(product.id)}>{product.name}</h4>
         <div className="mt-auto pt-2 border-t border-gray-50 dark:border-gray-700 space-y-3">
-          <div className="flex justify-between items-end">
-            <span className="text-sm font-black text-primary dark:text-blue-400">R$ {product.priceLow?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            <span className="text-blue-500 font-bold text-xs">Nota {product.qualityScore}</span>
+          <div className="flex flex-col">
+            {product.priceHigh && product.priceHigh > product.priceLow && (
+              <span className="text-[10px] text-gray-400 line-through">R$ {product.priceHigh.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            )}
+            <div className="flex justify-between items-end">
+              <span className="text-sm font-black text-primary dark:text-blue-400">R$ {product.priceLow?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span className="text-blue-500 font-bold text-xs">Nota {product.qualityScore}</span>
+            </div>
           </div>
           <button onClick={() => setSelectedProductId(product.id)} className="w-full bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 py-2 rounded-lg font-black text-[10px] uppercase border border-primary/20 hover:bg-primary hover:text-white transition">Review Completa</button>
           <div className="flex gap-2">
@@ -349,7 +363,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* MENU LATERAL DROPDOWN */}
+        {/* MENU LATERAL / HAMBÚRGUER DROPDOWN */}
         {isMenuOpen && (
           <div className="absolute top-20 right-0 w-full md:max-w-xs bg-white dark:bg-gray-900 border-b md:border-l border-gray-100 dark:border-gray-800 shadow-2xl animate-in slide-in-from-right duration-300">
              <div className="p-6 space-y-6">
@@ -362,7 +376,7 @@ const App: React.FC = () => {
 
                 <div className="border-t dark:border-gray-800 pt-6 space-y-4">
                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Configurações</p>
-                   <button onClick={() => { setIsDarkMode(!isDarkMode); setIsMenuOpen(false); }} className="flex items-center space-x-3 w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl font-bold transition">
+                   <button onClick={() => { setIsDarkMode(!isDarkMode); setIsMenuOpen(false); }} className="flex items-center space-x-3 w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-xl font-bold transition">
                       <i className={`fas ${isDarkMode ? 'fa-sun text-yellow-500' : 'fa-moon text-blue-500'}`}></i>
                       <span>Modo {isDarkMode ? 'Claro' : 'Escuro'}</span>
                    </button>
@@ -370,16 +384,16 @@ const App: React.FC = () => {
                    {user ? (
                       <div className="space-y-3">
                          <div className="p-4 bg-primary/10 rounded-xl">
-                            <p className="text-[10px] font-black uppercase text-primary mb-1">Logado como</p>
+                            <p className="text-[10px] font-black uppercase text-primary mb-1">Usuário</p>
                             <p className="font-bold text-sm truncate">{user.name}</p>
                          </div>
                          {user.isAdmin && (
-                            <button onClick={() => { setEditingItem(null); setShowAdminModal(true); setIsMenuOpen(false); }} className="w-full bg-blue-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-lg">Painel Admin</button>
+                            <button onClick={() => { setEditingItem(null); setShowAdminModal(true); setIsMenuOpen(false); }} className="w-full bg-blue-500 text-white py-3 rounded-xl font-black uppercase text-xs shadow-lg">Painel Administrativo</button>
                          )}
-                         <button onClick={() => { setUser(null); setIsMenuOpen(false); }} className="w-full text-red-500 font-black uppercase text-[10px] hover:underline">Sair da Conta</button>
+                         <button onClick={() => { setUser(null); setIsMenuOpen(false); }} className="w-full text-red-500 font-black uppercase text-[10px] hover:underline">Sair</button>
                       </div>
                    ) : (
-                      <button onClick={() => { setIsSignUp(false); setShowLoginModal(true); setIsMenuOpen(false); }} className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase text-xs shadow-xl">Entrar / Criar Conta</button>
+                      <button onClick={() => { setIsSignUp(false); setShowLoginModal(true); setIsMenuOpen(false); }} className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase text-xs shadow-xl">Entrar / Cadastrar</button>
                    )}
                 </div>
              </div>
@@ -403,7 +417,7 @@ const App: React.FC = () => {
                 {selectedNews.relatedProductIds && selectedNews.relatedProductIds.length > 0 && (
                   <div className="border-t dark:border-gray-800 pt-10">
                     <h3 className="text-xl font-black uppercase mb-6 flex items-center">
-                      <i className="fas fa-link text-primary mr-3"></i> Produtos Mencionados
+                      <i className="fas fa-link text-primary mr-3"></i> Itens Relacionados
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {products.filter(p => selectedNews.relatedProductIds?.includes(p.id)).map(p => (
@@ -426,20 +440,25 @@ const App: React.FC = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                    <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-none">{selectedProduct.name}</h2>
                    <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl border border-primary/20">
-                      <p className="text-[10px] font-black uppercase text-primary opacity-70">Posição no Ranking</p>
-                      <p className="font-black text-xl text-primary">#{selectedProduct.rank || 'N/A'} em {selectedProduct.category}</p>
+                      <p className="text-[10px] font-black uppercase text-primary opacity-70">Localização no Ranking</p>
+                      <p className="font-black text-xl text-primary">#{selectedProduct.rank || '?'} em {selectedProduct.category}</p>
                    </div>
                 </div>
                 
                 <div className="flex items-center space-x-6 mb-10">
                    <div className="text-center">
-                      <p className="text-[10px] font-black uppercase text-gray-400">Nota Técnica</p>
-                      <p className="text-4xl font-black text-blue-500">{selectedProduct.qualityScore}</p>
+                      <p className="text-[10px] font-black uppercase text-gray-400">Avaliação Técnica</p>
+                      <p className="text-4xl font-black text-blue-500">{selectedProduct.qualityScore}/10</p>
                    </div>
                    <div className="h-10 w-px bg-gray-200 dark:bg-gray-800"></div>
                    <div>
-                      <p className="text-[10px] font-black uppercase text-gray-400">Preço Estimado</p>
-                      <p className="text-2xl font-black text-primary dark:text-blue-400">R$ {selectedProduct.priceLow?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] font-black uppercase text-gray-400">Preço em Oferta</p>
+                      <div className="flex items-baseline space-x-2">
+                        <p className="text-2xl font-black text-primary dark:text-blue-400">R$ {selectedProduct.priceLow?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        {selectedProduct.priceHigh && selectedProduct.priceHigh > selectedProduct.priceLow && (
+                          <span className="text-sm text-gray-400 line-through">R$ {selectedProduct.priceHigh.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        )}
+                      </div>
                    </div>
                 </div>
 
@@ -457,17 +476,17 @@ const App: React.FC = () => {
         ) : activeCategory === 'all' ? (
           <div className="space-y-16">
             <section>
-              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-10 border-l-8 border-primary pl-4">Radar Tech News</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
+              <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter mb-8 border-l-8 border-primary pl-4">Radar de Notícias</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {news.map(item => <NewsCard key={item.id} item={item} />)}
               </div>
             </section>
             
             <section className="bg-gray-50 dark:bg-gray-800/50 -mx-4 px-4 py-16 rounded-[2rem] md:rounded-[4rem]">
               <div className="max-w-7xl mx-auto">
-                <h2 className="text-2xl font-black uppercase mb-10 text-center tracking-widest">🏆 Melhores Escolhas da Home</h2>
+                <h2 className="text-xl font-black uppercase mb-10 text-center tracking-widest">🏆 Ranking Geral da Home</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {topTenHome.map(p => <ProductCard key={p.id} product={p} rankLabel={`TOP #${p.rank}`} />)}
+                  {topTenHome.map(p => <ProductCard key={p.id} product={p} rankLabel={`HOME #${p.rank}`} />)}
                 </div>
               </div>
             </section>
@@ -475,22 +494,22 @@ const App: React.FC = () => {
         ) : (
           <div className="space-y-20 animate-in fade-in slide-in-from-bottom-4">
             <div className="text-center">
-               <h2 className="text-3xl md:text-5xl font-black uppercase text-primary tracking-tighter mb-4">{activeCategory}</h2>
+               <h2 className="text-2xl md:text-4xl font-black uppercase text-primary tracking-tighter mb-4">{activeCategory}</h2>
                <div className="w-24 h-1.5 bg-primary mx-auto rounded-full"></div>
             </div>
             
             <section>
-               <h3 className="text-xl md:text-2xl font-black uppercase mb-8 flex items-center"><i className="fas fa-medal text-yellow-500 mr-3"></i> Top 10 Melhores {activeCategory}</h3>
+               <h3 className="text-lg md:text-xl font-black uppercase mb-8 flex items-center"><i className="fas fa-medal text-yellow-500 mr-3"></i> Top 10 Melhores {activeCategory}</h3>
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                 {categoryLists?.best.map((p, i) => <ProductCard key={p.id} product={p} rankLabel={`#${i + 1}`} />)}
+                 {categoryLists?.best.map((p, i) => <ProductCard key={p.id} product={p} rankLabel={`Rank #${i + 1}`} />)}
                </div>
             </section>
 
             <section className="bg-gray-50 dark:bg-gray-900/50 -mx-4 px-4 py-16 rounded-[2rem] md:rounded-[4rem]">
                <div className="max-w-7xl mx-auto">
-                 <h3 className="text-xl md:text-2xl font-black uppercase mb-8 flex items-center"><i className="fas fa-piggy-bank text-green-500 mr-3"></i> Top 10 {activeCategory} com menores preços</h3>
+                 <h3 className="text-lg md:text-xl font-black uppercase mb-8 flex items-center"><i className="fas fa-tags text-green-500 mr-3"></i> Top 10 {activeCategory} com os menores preços</h3>
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                   {categoryLists?.lowestPrice.map((p, i) => <ProductCard key={p.id} product={p} rankLabel={`OFERTA`} />)}
+                   {categoryLists?.lowestPrice.map((p, i) => <ProductCard key={p.id} product={p} rankLabel={`Oferta`} />)}
                  </div>
                </div>
             </section>
@@ -502,27 +521,27 @@ const App: React.FC = () => {
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/90 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl p-8 animate-in zoom-in duration-300">
-            <div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-black uppercase tracking-tighter">{isSignUp ? 'Criar Conta' : 'Acesso Admin'}</h2><button onClick={() => setShowLoginModal(false)}><i className="fas fa-times"></i></button></div>
+            <div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-black uppercase tracking-tighter">{isSignUp ? 'Nova Conta' : 'Acesso Administrador'}</h2><button onClick={() => setShowLoginModal(false)}><i className="fas fa-times"></i></button></div>
             <form onSubmit={handleAuth} className="space-y-4">
-              {isSignUp && <input name="name" required className="w-full bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 outline-none focus:border-primary transition" placeholder="Nome Completo" />}
+              {isSignUp && <input name="name" required className="w-full bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 outline-none focus:border-primary transition" placeholder="Nome" />}
               <input name="email" type="email" required className="w-full bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 outline-none focus:border-primary transition" placeholder="Email" />
               <input name="password" type="password" required className="w-full bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border dark:border-gray-700 outline-none focus:border-primary transition" placeholder="Senha" />
-              <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-xl">{isSignUp ? 'Cadastrar' : 'Entrar'}</button>
+              <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-xl">{isSignUp ? 'Criar Conta' : 'Fazer Login'}</button>
             </form>
             <button onClick={() => setIsSignUp(!isSignUp)} className="w-full mt-6 text-xs font-bold text-gray-400 uppercase hover:text-primary transition">
-              {isSignUp ? 'Já tem conta? Faça Login' : 'Não tem conta? Crie uma aqui'}
+              {isSignUp ? 'Já possui acesso? Clique aqui' : 'Ainda não tem conta? Clique aqui'}
             </button>
           </div>
         </div>
       )}
 
-      {/* ADMIN MODAL (ADD & EDIT) */}
+      {/* ADMIN MODAL */}
       {showAdminModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/95 overflow-y-auto py-10">
           <div className="bg-white dark:bg-gray-900 w-full max-w-3xl rounded-3xl p-6 md:p-10 my-auto">
             <div className="flex justify-between items-center mb-8">
-               <h2 className="text-2xl font-black uppercase tracking-tighter">{editingItem ? 'Editar Registro Global' : 'Novo Registro Global'}</h2>
-               <button onClick={() => { setShowAdminModal(false); setEditingItem(null); }}><i className="fas fa-times text-2xl"></i></button>
+               <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter">{editingItem ? 'Editar Registro Global' : 'Adicionar Novo Registro'}</h2>
+               <button onClick={() => { setShowAdminModal(false); setEditingItem(null); setPriceHighDisplay(""); setPriceLowDisplay(""); }}><i className="fas fa-times text-2xl"></i></button>
             </div>
             
             <div className="flex space-x-4 mb-8">
@@ -538,28 +557,44 @@ const App: React.FC = () => {
                 </select>
                 <input name="imageUrl" defaultValue={editingItem?.imageUrl} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="URL da Imagem" />
                 <input name="affiliateUrl" defaultValue={editingItem?.affiliateUrl} required className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Link Mercado Livre" />
-                <input name="amazonUrl" defaultValue={editingItem?.amazonUrl} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Link Amazon (opcional)" />
+                <input name="amazonUrl" defaultValue={editingItem?.amazonUrl} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Link Amazon (Opcional)" />
                 <input name="qualityScore" defaultValue={editingItem?.qualityScore} type="number" step="0.1" className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Nota Técnica (0-10)" />
-                <input 
-                  value={priceLowDisplay} 
-                  onChange={(e) => setPriceLowDisplay(formatCurrencyInput(e.target.value))}
-                  placeholder="Preço Venda (R$)" required
-                  className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none font-bold text-primary" 
-                />
-                <input 
-                  value={priceHighDisplay} 
-                  onChange={(e) => setPriceHighDisplay(formatCurrencyInput(e.target.value))}
-                  placeholder="Preço de Tabela (opcional)" 
-                  className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" 
-                />
-                <input name="rank" defaultValue={editingItem?.rank} type="number" className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Posição no Top 10 (1-10)" />
-                <textarea name="description" defaultValue={editingItem?.description} required className="col-span-full bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-20 outline-none" placeholder="Breve descrição comercial" />
-                <textarea name="review" defaultValue={editingItem?.review} className="col-span-full bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-40 outline-none" placeholder="Review detalhado para a página do produto..." />
-                <div className="col-span-full flex flex-wrap gap-6 p-2">
-                  <label className="flex items-center space-x-2 cursor-pointer"><input name="isTopTen" defaultChecked={editingItem?.isTopTen} type="checkbox" className="w-5 h-5" /> <span className="text-xs font-black uppercase">Destaque Home</span></label>
-                  <label className="flex items-center space-x-2 cursor-pointer"><input name="mostTalkedAbout" defaultChecked={editingItem?.mostTalkedAbout} type="checkbox" className="w-5 h-5" /> <span className="text-xs font-black uppercase">Trending 🔥</span></label>
+                
+                {/* Inputs de preço com máscara */}
+                <div className="flex flex-col">
+                  <label className="text-[10px] uppercase font-black mb-1 ml-1 text-gray-400">Preço Atual (Venda)</label>
+                  <input 
+                    value={priceLowDisplay} 
+                    onChange={(e) => setPriceLowDisplay(formatCurrencyInput(e.target.value))}
+                    placeholder="R$ 0,00" required
+                    className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none font-bold text-primary" 
+                  />
                 </div>
-                <button type="submit" className="col-span-full bg-primary text-white py-5 rounded-xl font-black uppercase shadow-xl hover:bg-blue-800 transition">Sincronizar no Servidor Global</button>
+                <div className="flex flex-col">
+                  <label className="text-[10px] uppercase font-black mb-1 ml-1 text-gray-400">Preço Original (Riscado)</label>
+                  <input 
+                    value={priceHighDisplay} 
+                    onChange={(e) => setPriceHighDisplay(formatCurrencyInput(e.target.value))}
+                    placeholder="R$ 0,00 (opcional)" 
+                    className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" 
+                  />
+                </div>
+
+                <input name="rank" defaultValue={editingItem?.rank} type="number" className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="Posição no Ranking (1-10)" />
+                <textarea name="description" defaultValue={editingItem?.description} required className="col-span-full bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-20 outline-none" placeholder="Resumo simples" />
+                <textarea name="review" defaultValue={editingItem?.review} className="col-span-full bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-40 outline-none" placeholder="Análise completa e detalhada..." />
+                
+                <div className="col-span-full flex flex-wrap gap-6 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input name="isTopTen" defaultChecked={editingItem?.isTopTen} type="checkbox" className="w-5 h-5 accent-primary" /> 
+                    <span className="text-[10px] font-black uppercase">Exibir na Home</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input name="mostTalkedAbout" defaultChecked={editingItem?.mostTalkedAbout} type="checkbox" className="w-5 h-5 accent-primary" /> 
+                    <span className="text-[10px] font-black uppercase">Produto em Tendência (🔥)</span>
+                  </label>
+                </div>
+                <button type="submit" className="col-span-full bg-primary text-white py-5 rounded-xl font-black uppercase shadow-xl hover:bg-blue-800 transition">Salvar Alterações Globalmente</button>
               </form>
             ) : (
               <form onSubmit={handleSaveNews} className="grid grid-cols-1 gap-4">
@@ -568,14 +603,14 @@ const App: React.FC = () => {
                   <select value={newsCategory} onChange={(e) => setNewsCategory(e.target.value as Category)} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none">
                     {['celular', 'fones', 'videogames', 'jogos', 'acessorios'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <input name="imageUrl" defaultValue={editingItem?.imageUrl} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="URL da Capa" />
+                  <input name="imageUrl" defaultValue={editingItem?.imageUrl} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl outline-none" placeholder="URL da Imagem Principal" />
                 </div>
                 
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                   <p className="text-[10px] font-black uppercase text-gray-400 mb-3">Vincular Produtos Relacionados</p>
-                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-2">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/80 rounded-xl">
+                   <p className="text-[10px] font-black uppercase text-gray-400 mb-3 flex items-center"><i className="fas fa-link mr-2"></i> Vincular Itens Relacionados</p>
+                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
                       {products.map(p => (
-                         <label key={p.id} className="flex items-center space-x-2 text-[10px] font-bold p-2 bg-white dark:bg-gray-700 rounded-lg cursor-pointer">
+                         <label key={p.id} className="flex items-center space-x-2 text-[10px] font-bold p-3 bg-white dark:bg-gray-700 rounded-xl cursor-pointer border dark:border-gray-600 hover:border-primary transition">
                             <input 
                                type="checkbox" 
                                checked={selectedNewsProducts.includes(p.id)}
@@ -583,6 +618,7 @@ const App: React.FC = () => {
                                   if(e.target.checked) setSelectedNewsProducts([...selectedNewsProducts, p.id]);
                                   else setSelectedNewsProducts(selectedNewsProducts.filter(id => id !== p.id));
                                }}
+                               className="w-4 h-4"
                             />
                             <span className="truncate">{p.name}</span>
                          </label>
@@ -590,7 +626,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                <textarea name="content" defaultValue={editingItem?.content} required className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-64 outline-none" placeholder="Escreva a matéria aqui..." />
+                <textarea name="content" defaultValue={editingItem?.content} required className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl h-64 outline-none" placeholder="Escreva o conteúdo da notícia..." />
                 <button type="submit" className="bg-primary text-white py-5 rounded-xl font-black uppercase shadow-xl hover:bg-blue-800 transition">Publicar Notícia Global</button>
               </form>
             )}
